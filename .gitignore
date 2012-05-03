@@ -1,0 +1,11 @@
+output
+*.Cache
+*.cache
+*.ncb
+TestResult.xml
+_ReSharper*
+*.suo
+*.bak
+bin
+obj
+*.vsdoc
