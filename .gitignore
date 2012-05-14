@@ -4,6 +4,7 @@ output
 *.ncb
 TestResult.xml
 _ReSharper*
+*ReSharper*
 *.suo
 *.bak
 bin

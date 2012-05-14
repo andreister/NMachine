@@ -3,51 +3,48 @@ using System.Collections;
 using System.Collections.Generic;
 using NMachine.Algorithms;
 using NUnit.Framework;
+using System.Linq;
 
 namespace NMachine.Tests.Algorithms
 {
 	[TestFixture]
 	public class AbstractAlgorithmTests
 	{
-		[Test, ExpectedException(ExpectedException = typeof(NMachineException), ExpectedMessage = "The same number of labels and features expected, but received 2 features and 3 labels.")]
-		public void DifferentNumberOfInputsAndOutputs()
+		[Test, TestCaseSource("Input")]
+		[ExpectedException(ExpectedException = typeof(NMachineException), ExpectedMessage = "The same number of labels and features expected, but received", MatchType = MessageMatch.Contains)]
+		public void InputSizeIncorrect(List<object> samples, List<double> labels)
 		{
-			var people = new List<Person> {
-				new Person {Age = 10, Height = 12},
-				new Person {Age = 42, Height = 34}
-			};
-			var peopleWeights = new List<double> {
-				23, 
-				323, 
-				32
-			};
-			new FakeAlgorithm(people, peopleWeights);
+			new FakeAlgorithm(samples, labels.Take(2));
 		}
 
-		[Test]
-		public void InputSplit()
+		[Test, TestCaseSource("Input")]
+		public void DefaultInputSplit(List<object> samples, List<double> labels)
 		{
-			var people = new List<Person> {
-				new Person { Age = 10, Height = 12 }, 
-				new Person { Age = 12, Height = 14 }, 
-				new Person { Age = 21, Height = 19 }
-			};
-			var peopleWeights = new List<double> {
-				23, 
-				323, 
-				32
-			};
-
-			var algorithm = new FakeAlgorithm(people, peopleWeights);
-
+			var people = samples.ConvertAll(x => (Person)x);
 			var trainingSetSize = (int)Math.Ceiling(((double)2 / 3) * people.Count);
 			var crossValidationSetSize = (int)Math.Ceiling(((double)2 / 3) * people.Count);
 
-			AssertInput(algorithm.MyTrainingSetX, algorithm.MyTrainingSetY, people, peopleWeights, 0, trainingSetSize);
-			AssertInput(algorithm.MyCrossValidationSetX, algorithm.MyCrossValidationSetY, people, peopleWeights, trainingSetSize, crossValidationSetSize);
+			var algorithm = new FakeAlgorithm(people, labels, new Settings {ScaleAndNormalize = false});
 
+			AssertInput(algorithm.MyTrainingSetX, algorithm.MyTrainingSetY, people, labels, 0, trainingSetSize);
+			AssertInput(algorithm.MyCrossValidationSetX, algorithm.MyCrossValidationSetY, people, labels, trainingSetSize, crossValidationSetSize);
 			Assert.That(algorithm.MyTestSetX, Is.Null);
 			Assert.That(algorithm.MyTestSetY, Is.Null);
+		}
+
+		[Test, TestCaseSource("Input")]
+		public void ScaledInput(List<object> samples, List<double> labels)
+		{
+			var people = samples.ConvertAll(x => (Person)x);
+			var age = new { Avg = people.Select(x => x.Age).Average(), Max = people.Select(x => x.Age).Max(), Min = people.Select(x => x.Age).Min() };
+			var height = new { Avg = people.Select(x => x.Height).Average(), Max = people.Select(x => x.Height).Max(), Min = people.Select(x => x.Height).Min() };
+
+			var algorithm = new FakeAlgorithm(people, labels, new Settings {InputSplitType = InputSplitType.NoSplit});
+
+			Assert.That(algorithm.MyTrainingSetX[0, 0], Is.EqualTo(1), "A column of ones should be added to the input matrix.");
+			Assert.That(algorithm.MyTrainingSetX[0, 1], Is.EqualTo(  (people[0].Age - age.Avg) / (age.Max - age.Min) ));
+			Assert.That(algorithm.MyTrainingSetX[0, 2], Is.EqualTo(  (people[0].Height - height.Avg) / (height.Max - height.Min) ));
+			Assert.That(algorithm.MyTrainingSetY[0], Is.EqualTo(labels[0]));
 		}
 
 		private void AssertInput(double[,] xMatrix, double[] yMatrix, List<Person> xList, List<double> yList, int skip, int take)
@@ -60,6 +57,43 @@ namespace NMachine.Tests.Algorithms
 			}
 		}
 
+		public IEnumerable<TestCaseData> Input
+		{
+			get
+			{
+				return new List<TestCaseData> {
+					new TestCaseData(
+						new List<Person> {
+							new Person { Age = 10, Height = 12 },
+							new Person { Age = 42, Height = 34 },
+							new Person { Age = 21, Height = 19 }
+						}.ConvertAll(x => (object)x),
+						new List<double> {
+							23,
+							323,
+							32
+						}
+					).SetName("3 samples input"),
+					new TestCaseData(
+						new List<Person> {
+							new Person { Age = 2, Height = 5 },
+							new Person { Age = 7, Height = 11 },
+							new Person { Age = 15, Height = 19 },
+							new Person { Age = 40, Height = 25 },
+							new Person { Age = 70, Height = 20 }
+						}.ConvertAll(x => (object)x),
+						new List<double> {
+							23,
+							323,
+							43,
+							34,
+							42
+						}
+					).SetName("5 samples input"),
+				};
+			}
+		}
+
 		private class Person
 		{
 			public int Age { get; set; }
@@ -68,8 +102,8 @@ namespace NMachine.Tests.Algorithms
 
 		private class FakeAlgorithm : AbstractAlgorithm
 		{
-			public FakeAlgorithm(IEnumerable features, IEnumerable labels) 
-				: base(features, labels)
+			public FakeAlgorithm(IEnumerable features, IEnumerable labels, Settings settings = null)
+				: base(features, labels, settings ?? new Settings { ScaleAndNormalize = false })
 			{
 			}
 

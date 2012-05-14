@@ -50,7 +50,9 @@ namespace NMachine.Algorithms.Supervised
 		/// </summary>
 		private bool TryNormalEquation(Input input)
 		{
-			int threshold = 1;// 00;
+			return false; //don't use Normal Equation for now
+
+			int threshold = 100;
 			if (input.FeaturesCount > threshold || input.SamplesCount < input.FeaturesCount) {
 				_logger.Info("Normal Equation seems not applicable due to the feature-space size, resorting to Gradient Descent.");
 				return false;
@@ -82,7 +84,7 @@ namespace NMachine.Algorithms.Supervised
 			var multiplier = (Settings.LearningRate / input.SamplesCount);
 			for (int i = 0; i < Settings.MaxIterations; i++) {
 				_theta -= multiplier * ((input.X * _theta.Transpose() - input.Y).Transpose() * input.X);
-				if (monitor.CanStop(_theta)) {
+				if (monitor.IsConverged(_theta)) {
 					break;
 				}
 			}

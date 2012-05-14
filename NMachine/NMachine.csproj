@@ -47,6 +47,7 @@
     <Compile Include="Algorithms\AbstractAlgorithm.cs" />
     <Compile Include="Algorithms\Extensions\EnumerableConverter.cs" />
     <Compile Include="Algorithms\Input.cs" />
+    <Compile Include="Algorithms\InputPreprocessor.cs" />
     <Compile Include="Algorithms\InputSplit.cs" />
     <Compile Include="Algorithms\InputSplitType.cs" />
     <Compile Include="Algorithms\Settings.cs" />

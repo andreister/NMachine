@@ -18,7 +18,7 @@ namespace NMachine.Algorithms.Supervised
 		private readonly Input _input;
 		private readonly double _convergenceDelta;
 		private readonly List<double> _costItems = new List<double>();
-		private readonly Mode _notificationMode;
+		private readonly NotificationMode _mode;
 		private int _iterationCounter;
 
 		/// <summary>
@@ -27,35 +27,13 @@ namespace NMachine.Algorithms.Supervised
 		/// <param name="input">Input features and labels.</param>
 		/// <param name="convergenceDelta">Criteria of convergence. When two subsequent cost function values
 		/// don't differ by more than the given delta, we can say that the Gradient Descent has converged.</param>
-		/// <param name="notificationMode">Monitor mode - defines how the monitor would notify about cost function problems.</param>
-		public CostFunctionMonitor(Input input, double convergenceDelta = 0.000001, Mode notificationMode = Mode.Throw)
+		/// <param name="mode">Monitor mode - defines how the monitor would notify about cost function problems.</param>
+		public CostFunctionMonitor(Input input, double convergenceDelta = 0.000001, NotificationMode mode = NotificationMode.Throw)
 		{
 			_input = input;
 			_convergenceDelta = convergenceDelta;
-			_notificationMode = notificationMode;
+			_mode = mode;
 			_iterationCounter = 0;
-		}
-
-		/// <summary>
-		/// Calculates the error function for the given theta vector,
-		/// and occasionally checks if the error really goes down.
-		/// 
-		/// The value of the cost function is calculated as per usual
-		/// 
-		///		J(theta) = (1/2m)*SUM(h[i] - y[i])^2
-		/// 
-		/// </summary>
-		/// <param name="theta">Theta vector to use in cost function calculation.</param>
-		public void CheckCost(Matrix<double> theta)
-		{
-			var cost = CalculateCost(theta);
-			_costItems.Add(cost);
-			
-			_iterationCounter++;
-			var needCheck = (_iterationCounter % _monitorStep == 0);
-			if (needCheck) {
-				MonitorCostChange();
-			}
 		}
 
 		/// <summary>
@@ -70,7 +48,7 @@ namespace NMachine.Algorithms.Supervised
 		/// previously calculated one by less than the convergence delta.
 		/// </summary>
 		/// <param name="theta">Theta vector to use in cost function calculation.</param>
-		public bool CanStop(Matrix<double> theta)
+		public bool IsConverged(Matrix<double> theta)
 		{
 			var cost = CalculateCost(theta);
 			_costItems.Add(cost);
@@ -78,7 +56,7 @@ namespace NMachine.Algorithms.Supervised
 			_iterationCounter++;
 			var needCheck = (_iterationCounter % _monitorStep == 0);
 			if (needCheck) {
-				MonitorCostChange();
+				EnsureCostDecrease();
 			}
 
 			var total = _costItems.Count;
@@ -103,7 +81,7 @@ namespace NMachine.Algorithms.Supervised
 			return ((double)1 / 2 * _input.SamplesCount) * j.ToColumnWiseArray()[0];
 		}
 
-		private void MonitorCostChange()
+		private void EnsureCostDecrease()
 		{
 			int costBalance = 0;
 			for (int i = _costItems.Count - 1; i > 0; i--) {
@@ -111,8 +89,8 @@ namespace NMachine.Algorithms.Supervised
 					break;
 				}
 
-				bool costGoesDown = (_costItems[i] < _costItems[i-1]);
-				costBalance += costGoesDown ? (1) : (-1);
+				bool costDecreases = (_costItems[i-1] > _costItems[i]);
+				costBalance += costDecreases ? (1) : (-1);
 			}
 
 			if (costBalance < 0) {
@@ -125,10 +103,10 @@ namespace NMachine.Algorithms.Supervised
 
 		private void Notify(string message)
 		{
-			switch (_notificationMode) {
-				case Mode.Throw:
+			switch (_mode) {
+				case NotificationMode.Throw:
 					throw new NMachineException(message);
-				case Mode.Log:
+				case NotificationMode.Log:
 				default:
 					_logger.Warn(message);
 					break;
@@ -136,12 +114,12 @@ namespace NMachine.Algorithms.Supervised
 		}
 
 		/// <summary>
-		/// Monitor mode - either write to log, or throw an exception.
+		/// Notification mode of the monitor.
 		/// </summary>
-		internal enum Mode
+		internal enum NotificationMode
 		{
-			Log = 0,
-			Throw = 1
+			Throw = 0,
+			Log = 1,
 		}
 	}
 }
