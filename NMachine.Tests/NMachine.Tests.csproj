@@ -49,7 +49,6 @@
     <Compile Include="Algorithms\Supervised\LinearRegressionTestsCar.cs" />
     <Compile Include="Algorithms\Supervised\LinearRegressionTestsFood.cs" />
     <Compile Include="Algorithms\Extensions\EnumerableConverterTests.cs" />
-    <Compile Include="InputSplitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -28,7 +28,7 @@ namespace NMachine.Algorithms
 		/// Converts samples and labels to "TrainingSet" instances.
 		/// If required, applies feature scaling and mean normalization.
 		/// </summary>
-		internal void Run(IEnumerable samples, IEnumerable labels, InputSplitType splitType)
+		internal void Run(IEnumerable samples, IEnumerable labels, InputSplitRatio splitRatio)
 		{
 			int samplesCount;
 			_features = GetFeatures(samples, labels, out samplesCount);
@@ -47,11 +47,11 @@ namespace NMachine.Algorithms
 				}
 			}
 
-			switch (splitType) {
-				case InputSplitType.NoSplit:
+			switch (splitRatio) {
+				case InputSplitRatio.No:
 					TrainingSet = new Input(samplesMatrix, labelsVector, 0, samplesCount);
 					break;
-				case InputSplitType.Default:
+				case InputSplitRatio.Default:
 					var trainingSetSize = (int) Math.Ceiling(((double) 2/3)*samplesCount);
 					var crossValidationTestSize = (int)Math.Ceiling(((double)1 / 3) * samplesCount / 2);
 					var testSetSize = samplesCount - (trainingSetSize + crossValidationTestSize);
@@ -61,7 +61,7 @@ namespace NMachine.Algorithms
 					TestSet = new Input(samplesMatrix, labelsVector, (trainingSetSize + crossValidationTestSize), testSetSize);
 					break;
 				default:
-					throw new NMachineException("Unexpected split type: " + splitType);
+					throw new NMachineException("Unexpected split type: " + splitRatio);
 			}
 		}
 

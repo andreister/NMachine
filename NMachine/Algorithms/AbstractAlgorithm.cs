@@ -26,7 +26,7 @@ namespace NMachine.Algorithms
 			Settings = settings ?? new Settings();
 			_preprocessor = new InputPreprocessor(Settings.ScaleAndNormalize);
 
-			_preprocessor.Run(samples, labels, Settings.InputSplitType);
+			_preprocessor.Run(samples, labels, Settings.InputSplitRatio);
 
 			TrainingSet = _preprocessor.TrainingSet;
 			CrossValidationSet = _preprocessor.CrossValidationSet;

@@ -6,16 +6,15 @@
 		internal double ConvergenceDelta { get; set; }
 		internal int MaxIterations { get; set; }
 		internal bool ScaleAndNormalize { get; set; }
-		internal InputSplitType InputSplitType { get; set; }
-		internal InputSplit InputSplit { get; set; }
+		internal InputSplitRatio InputSplitRatio { get; set; }
 
 		internal Settings()
 		{
 			LearningRate = 0.01;
 			ConvergenceDelta = 0.000001;
-			MaxIterations = 150;
+			MaxIterations = 1500;
 			ScaleAndNormalize = true;
-			InputSplitType = InputSplitType.Default;
+			InputSplitRatio = InputSplitRatio.Default;
 		}
 	}
 }

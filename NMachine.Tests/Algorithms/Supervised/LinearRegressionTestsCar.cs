@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using NMachine.Algorithms;
 using NMachine.Algorithms.Supervised;
 using NUnit.Framework;
 
@@ -46,7 +47,7 @@ namespace NMachine.Tests.Algorithms.Supervised
 		[Test]
 		public void PredictCarPrice()
 		{
-			var algorithm = new LinearRegression(_cars, _carPrices);
+			var algorithm = new LinearRegression(_cars, _carPrices, new Settings {InputSplitRatio = InputSplitRatio.No});
 			
 			var car = new Car {
 				Model = "Mazda MPV", 

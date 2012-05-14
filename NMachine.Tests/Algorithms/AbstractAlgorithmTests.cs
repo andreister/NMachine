@@ -39,7 +39,7 @@ namespace NMachine.Tests.Algorithms
 			var age = new { Avg = people.Select(x => x.Age).Average(), Max = people.Select(x => x.Age).Max(), Min = people.Select(x => x.Age).Min() };
 			var height = new { Avg = people.Select(x => x.Height).Average(), Max = people.Select(x => x.Height).Max(), Min = people.Select(x => x.Height).Min() };
 
-			var algorithm = new FakeAlgorithm(people, labels, new Settings {InputSplitType = InputSplitType.NoSplit});
+			var algorithm = new FakeAlgorithm(people, labels, new Settings {InputSplitRatio = InputSplitRatio.No});
 
 			Assert.That(algorithm.MyTrainingSetX[0, 0], Is.EqualTo(1), "A column of ones should be added to the input matrix.");
 			Assert.That(algorithm.MyTrainingSetX[0, 1], Is.EqualTo(  (people[0].Age - age.Avg) / (age.Max - age.Min) ));

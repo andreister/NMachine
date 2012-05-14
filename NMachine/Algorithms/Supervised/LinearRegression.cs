@@ -50,7 +50,7 @@ namespace NMachine.Algorithms.Supervised
 		/// </summary>
 		private bool TryNormalEquation(Input input)
 		{
-			return false; //don't use Normal Equation for now
+			return false; //don't use Normal Equation for now - for some reason, pseudoinverse is not stable
 
 			int threshold = 100;
 			if (input.FeaturesCount > threshold || input.SamplesCount < input.FeaturesCount) {

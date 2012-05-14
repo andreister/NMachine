@@ -21,7 +21,7 @@ namespace NMachine.Tests.Algorithms.Supervised
 				4
 			};
 
-			var algorithm = new LinearRegression(cars, prices, new Settings {InputSplitType = InputSplitType.NoSplit});
+			var algorithm = new LinearRegression(cars, prices, new Settings {InputSplitRatio = InputSplitRatio.No});
 			
 			var car = new Car {Doors = 9, Seats = 9};
 			var price = algorithm.GetPrediction(car);

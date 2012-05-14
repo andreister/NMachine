@@ -1,6 +1,6 @@
 ﻿namespace NMachine.Algorithms
 {
-	public enum InputSplitType
+	public enum InputSplitRatio
 	{
 		/// <summary>
 		/// Split 2/3 for the training set, 1/3 for the validation and 1/3 for the test set.
@@ -8,13 +8,13 @@
 		Default = 0,
 
 		/// <summary>
-		/// Custom split - InputSplit object should be provided.
+		/// Custom split - the client should provide the split ratio.
 		/// </summary>
 		Custom = 1,
 
 		/// <summary>
 		/// Don't split the input and use all data as a training set. (Not recommended).
 		/// </summary>
-		NoSplit = 2
+		No = 2
 	}
 }
