@@ -107,6 +107,10 @@ namespace NMachine.Algorithms
 			while (enumerator.MoveNext()) {
 				for (int feature = 0; feature < _features.Length; feature++) {
 					var valueObj = _features[feature].GetValue(enumerator.Current, null);
+					if (valueObj == null) {
+						throw new NMachineException("Currenctly the system doesn't support NULL values - all features must have a value.");
+					}
+
 					double value;
 					var convertible = valueObj as IConvertible;
 					if (convertible != null) {
