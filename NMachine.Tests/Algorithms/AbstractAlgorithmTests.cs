@@ -36,14 +36,14 @@ namespace NMachine.Tests.Algorithms
 		public void ScaledInput(List<object> samples, List<double> labels)
 		{
 			var people = samples.ConvertAll(x => (Person)x);
-			var age = new { Avg = people.Select(x => x.Age).Average(), Max = people.Select(x => x.Age).Max(), Min = people.Select(x => x.Age).Min() };
-			var height = new { Avg = people.Select(x => x.Height).Average(), Max = people.Select(x => x.Height).Max(), Min = people.Select(x => x.Height).Min() };
+			var age = new { Mean = people.Select(x => x.Age).Average(), Deviation = Math.Sqrt( ((double)1/(people.Count - 1)) * people.Select(x => Math.Pow(x.Age - people.Select(xx => xx.Age).Average(), 2)).Sum() ) };
+			var height = new { Mean = people.Select(x => x.Height).Average(), Deviation = Math.Sqrt(((double)1 / (people.Count - 1)) * people.Select(x => Math.Pow(x.Height - people.Select(xx => xx.Height).Average(), 2)).Sum()) };
 
 			var algorithm = new FakeAlgorithm(people, labels, new Settings {InputSplitRatio = InputSplitRatio.No});
 
 			Assert.That(algorithm.MyTrainingSetX[0, 0], Is.EqualTo(1), "A column of ones should be added to the input matrix.");
-			Assert.That(algorithm.MyTrainingSetX[0, 1], Is.EqualTo(  (people[0].Age - age.Avg) / (age.Max - age.Min) ));
-			Assert.That(algorithm.MyTrainingSetX[0, 2], Is.EqualTo(  (people[0].Height - height.Avg) / (height.Max - height.Min) ));
+			Assert.That(algorithm.MyTrainingSetX[0, 1], Is.EqualTo(  (people[0].Age - age.Mean) / age.Deviation ));
+			Assert.That(algorithm.MyTrainingSetX[0, 2], Is.EqualTo(  (people[0].Height - height.Mean) / height.Deviation ));
 			Assert.That(algorithm.MyTrainingSetY[0], Is.EqualTo(labels[0]));
 		}
 

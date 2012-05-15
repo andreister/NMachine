@@ -46,7 +46,6 @@
   <ItemGroup>
     <Compile Include="Algorithms\AbstractAlgorithmTests.cs" />
     <Compile Include="Algorithms\Supervised\LinearRegressionTests.cs" />
-    <Compile Include="Algorithms\Extensions\EnumerableConverterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -61,6 +60,10 @@
     <Content Include="_Data\CarsDataset\93cars.txt" />
     <Content Include="_Data\CarsDataset\_readme.txt" />
     <Content Include="_Data\FoodChainDataset\_readme.txt" />
+    <Content Include="_Data\HousePricesDataset\houseprices.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="_Data\HousePricesDataset\_readme.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NMachine\NMachine.csproj">

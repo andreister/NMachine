@@ -14,18 +14,23 @@ namespace NMachine.Tests.Algorithms.Supervised
 		private static List<decimal> _carPrices;
 		private static List<City> _cities;
 		private static List<decimal> _profits;
+		private static List<House> _houses;
+		private static List<decimal> _housePrices;
 
 		[TestFixtureSetUp]
 		public void FixtureSetup()
 		{
 			ReadCitiesAndProfits();
 			ReadCarsAndPrices();
+			ReadHousesAndPrices();
 		}
 
 		[Test]
 		public void PredictCarPrice()
 		{
-			var algorithm = new LinearRegression(_cars, _carPrices, new Settings { InputSplitRatio = InputSplitRatio.No });
+			//var algorithm = new LinearRegression(_cars, _carPrices, new Settings { InputSplitRatio = InputSplitRatio.No, MaxIterations = 425});
+			//the above works - looks like IsConverging isn't working properly
+			var algorithm = new LinearRegression(_cars, _carPrices, new Settings { InputSplitRatio = InputSplitRatio.No});
 
 			var car = new Car {
 				Model = "Mazda MPV",
@@ -38,8 +43,8 @@ namespace NMachine.Tests.Algorithms.Supervised
 			Assert.That(price, Is.InRange(15.9, 16.9), "Incorrect price prediction for [" + car + "]");
 		}
 
-		[Test, TestCaseSource("CityPopulations")]
-		public void PredictProfit(decimal population, decimal profitFrom, decimal profitTo)
+		[Test, TestCaseSource("Cities")]
+		public void Univariate(decimal population, decimal profitFrom, decimal profitTo)
 		{
 			var algorithm = new LinearRegression(_cities, _profits, new Settings { ScaleAndNormalize = false, InputSplitRatio = InputSplitRatio.No });
 
@@ -49,45 +54,47 @@ namespace NMachine.Tests.Algorithms.Supervised
 			Assert.That(profit, Is.InRange(profitFrom, profitTo), "Incorrect price prediction for [" + city + "]");
 		}
 
-		[Test]
-		public void FeatureScaledInput()
+		[Test, TestCaseSource("Houses")]
+		public void MultivariateScaled(decimal size, int bedroomCount, decimal priceFrom, decimal priceTo)
 		{
-			var songs = new[] {
-				new Song {Volume = 1, Pleasure = 1},
-				new Song {Volume = 4, Pleasure = 4},
-				new Song {Volume= 2, Pleasure = 2},
-			};
-			var prices = new double[] {
-				2,
-				8,
-				4
-			};
+			//var algorithm = new LinearRegression(_houses, _housePrices, new Settings { InputSplitRatio = InputSplitRatio.No, MaxIterations = 400});
+			//the above works - looks like IsConverging isn't working properly
+			var algorithm = new LinearRegression(_houses, _housePrices, new Settings { InputSplitRatio = InputSplitRatio.No});
 
-			var algorithm = new LinearRegression(songs, prices, new Settings { InputSplitRatio = InputSplitRatio.No });
+			var house = new House { Size = size, BedroomCount = bedroomCount };
+			var price = algorithm.GetPrediction(house);
 
-			var song = new Song { Volume = 9, Pleasure = 9 };
-			var price = algorithm.GetPrediction(song);
-
-			Assert.That(price, Is.InRange(17.5, 18.5), "Incorrect prediction for " + song);
+			Assert.That(price, Is.InRange(priceFrom, priceTo), "Incorrect price prediction for [" + house + "]");
 		}
 
 		#region Helper code
 
-		private class City
-		{
-			public decimal Population { get; set; }
-		}
-
-		public IEnumerable<TestCaseData> CityPopulations
+		public IEnumerable<TestCaseData> Cities
 		{
 			get
 			{
 				return new List<TestCaseData> {
-					new TestCaseData(3.5m, 0.4519m, 0.452m).SetName("35000 people"),
-					new TestCaseData(7m, 4.5341m, 4.5343m).SetName("70000 people"),
-					new TestCaseData(0.25m, -3.339m, -3.338m).SetName("2500 people")
+					new TestCaseData(3.5m, 0.4519m, 0.452m).SetName("city 35000 people -> profit 0.45"),
+					new TestCaseData(7m, 4.5341m, 4.5343m).SetName("city 70000 people -> profit 4.5"),
+					new TestCaseData(0.25m, -3.339m, -3.338m).SetName("city 2500 people -> profit -3.3")
 				};
 			}
+		}
+
+		public IEnumerable<TestCaseData> Houses
+		{
+			get
+			{
+				return new List<TestCaseData> {
+					new TestCaseData(1000m, 1, 197000m, 198000m).SetName("house 1K feet, 1 bedroom -> price 197K"),
+					new TestCaseData(852m, 2, 180000m, 185000m).SetName("house 0.8K feet, 2 bedrooms -> price 185K")
+				};
+			}
+		}
+
+		private class City
+		{
+			public decimal Population { get; set; }
 		}
 
 		private class Car
@@ -103,10 +110,10 @@ namespace NMachine.Tests.Algorithms.Supervised
 			}
 		}
 
-		private class Song
+		private class House
 		{
-			public decimal Volume { get; set; }
-			public decimal Pleasure { get; set; }
+			public decimal Size { get; set; }
+			public int BedroomCount { get; set; }
 		}
 
 		private void ReadCitiesAndProfits()
@@ -152,6 +159,29 @@ namespace NMachine.Tests.Algorithms.Supervised
 
 			Assert.That(_cars.Count, Is.EqualTo(93), "Cars dataset hasn't been read correctly.");
 			Assert.That(_carPrices.Count, Is.EqualTo(93), "Cars dataset hasn't been read correctly.");
+		}
+
+		private void ReadHousesAndPrices()
+		{
+			_houses = new List<House>();
+			_housePrices = new List<decimal>();
+			using (var reader = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "_Data", "HousePricesDataset", "houseprices.txt"))) {
+				var line = reader.ReadLine();
+				while (line != null) {
+					var values = line.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+					var house = new House {
+						Size = Convert.ToDecimal(values[0]),
+						BedroomCount = Convert.ToInt32(values[1])
+					};
+					_houses.Add(house);
+					_housePrices.Add(Convert.ToDecimal(values[2]));
+					
+					line = reader.ReadLine();
+				}
+			}
+
+			Assert.That(_houses.Count, Is.EqualTo(47), "Houses dataset hasn't been read correctly.");
+			Assert.That(_housePrices.Count, Is.EqualTo(47), "Houses dataset hasn't been read correctly.");
 		}
 
 		#endregion

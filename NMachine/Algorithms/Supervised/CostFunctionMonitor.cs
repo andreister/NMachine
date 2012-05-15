@@ -65,9 +65,14 @@ namespace NMachine.Algorithms.Supervised
 				return false;
 			}
 
-			var last = _costItems[total - 1];
-			var previous = _costItems[total - 2];
-			return Math.Abs(last - previous) <= _convergenceDelta;
+			double errorValue = Math.Abs(_costItems[total - 1] - _costItems[total - 2]);
+
+			if (errorValue <= _convergenceDelta) {
+				_logger.Info(string.Format("Gradient descent has converged with error={0} for convergence threshold={1}", _costItems[total - 1], _convergenceDelta));
+				return true;
+			}
+
+			return false;
 		}
 
 		private double CalculateCost(Matrix<double> theta)

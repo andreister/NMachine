@@ -7,9 +7,8 @@ namespace NMachine.Algorithms
 	internal class InputPreprocessor
 	{
 		private readonly bool _scaleAndNormalize;
-		private double[] _min;
-		private double[] _avg;
-		private double[] _max;
+		private double[] _mean;
+		private double[] _deviation;
 		private PropertyInfo[] _features;
 		
 		internal Input TrainingSet { get; private set; }
@@ -33,15 +32,14 @@ namespace NMachine.Algorithms
 			int samplesCount;
 			_features = GetFeatures(samples, labels, out samplesCount);
 
-			var samplesMatrix = GetSamplesMatrix(samples, samplesCount, out _min, out _max, out _avg);
+			var samplesMatrix = GetSamplesMatrix(samples, samplesCount, out _mean, out _deviation);
 			var labelsVector = GetLabelsVector(labels, samplesCount);
 
 			if (_scaleAndNormalize) {
 				int sample = 0;
 				while (sample < samplesCount) {
 					for (int feature = 0; feature < _features.Length; feature++) {
-						var scale = (_max[feature] == _min[feature]) ? 1 : _max[feature] - _min[feature];
-						samplesMatrix[sample, feature] = (samplesMatrix[sample, feature] - _avg[feature]) / scale;
+						samplesMatrix[sample, feature] = (samplesMatrix[sample, feature] - _mean[feature]) / _deviation[feature];
 					}
 					sample++;
 				}
@@ -74,64 +72,77 @@ namespace NMachine.Algorithms
 			var samples = new[] {sample};
 			var labels = new[] {label};
 
-			double[] min;
-			double[] avg;
-			double[] max;
-			var samplesMatrix = GetSamplesMatrix(samples, 1, out min, out max, out avg);
+			var samplesMatrix = GetSamplesMatrix(samples, 1);
 			var labelsVector = GetLabelsVector(labels, 1);
 
 			if (_scaleAndNormalize) {
 				for (int feature = 0; feature < _features.Length; feature++) {
-					var scale = (_max[feature] == _min[feature]) ? 1 : _max[feature] - _min[feature];
-					samplesMatrix[0, feature] = (samplesMatrix[0, feature] - _avg[feature]) / scale;
+					samplesMatrix[0, feature] = (samplesMatrix[0, feature] - _mean[feature]) / _deviation[feature];
 				}
 			}
 
 			return new Input(samplesMatrix, labelsVector, 0, 1);
 		}
 
-		private double[,] GetSamplesMatrix(IEnumerable samples, int samplesCount, out double[] min, out double[] max, out double[] avg)
+		private double[,] GetSamplesMatrix(IEnumerable samples, int samplesCount)
+		{
+			double[] mean; 
+			double[] deviation;
+
+			return GetSamplesMatrix(samples, samplesCount, out mean, out deviation);
+		}
+
+		private double[,] GetSamplesMatrix(IEnumerable samples, int samplesCount, out double[] mean, out double[] deviation)
 		{
 			var samplesMatrix = new double[samplesCount, _features.Length];
 
-			avg = new double[_features.Length];
-			max = new double[_features.Length];
-			min = new double[_features.Length];
-			for (int property = 0; property < _features.Length; property++) {
-				max[property] = double.MinValue;
-				min[property] = double.MaxValue;
-			}
+			mean = new double[_features.Length];
+			deviation = new double[_features.Length];
 
 			var enumerator = samples.GetEnumerator();
 			int sample = 0;
 			while (enumerator.MoveNext()) {
 				for (int feature = 0; feature < _features.Length; feature++) {
-					var valueObj = _features[feature].GetValue(enumerator.Current, null);
-					if (valueObj == null) {
-						throw new NMachineException("Currenctly the system doesn't support NULL values - all features must have a value.");
-					}
-
-					double value;
-					var convertible = valueObj as IConvertible;
-					if (convertible != null) {
-						value = (convertible is string) ? convertible.GetHashCode() : convertible.ToDouble(null);
-					}
-					else {
-						throw new NMachineException("Failed to convert " + valueObj + " to double.");
-					}
+					var value = GetValue(enumerator.Current, feature);
 
 					samplesMatrix[sample, feature] = value;
-					max[feature] = Math.Max(max[feature], value);
-					min[feature] = Math.Min(min[feature], value);
-					avg[feature] += value;
+					mean[feature] += value;
 				}
 				sample++;
 			}
 			for (int property = 0; property < _features.Length; property++) {
-				avg[property] /= samplesCount;
+				mean[property] /= samplesCount;
+			}
+
+			//Now calculate standard deviation. Note: would be interesting to implement one-pass algorithm as per http://zach.in.tu-clausthal.de/teaching/info_literatur/Welford.pdf
+			for (sample = 0; sample < samplesCount; sample++) {
+				for (int feature = 0; feature < _features.Length; feature++) {
+					deviation[feature] += Math.Pow((samplesMatrix[sample, feature] - mean[feature]), 2);
+				}
+			}
+			for (int feature = 0; feature < _features.Length; feature++) {
+				deviation[feature] = Math.Sqrt(deviation[feature] / (samplesCount - 1));
 			}
 
 			return samplesMatrix;
+		}
+
+		private double GetValue(object sample, int feature)
+		{
+			var valueObj = _features[feature].GetValue(sample, null);
+			if (valueObj == null) {
+				throw new NMachineException("Currenctly the system doesn't support NULL values - all features must have a value.");
+			}
+
+			double value;
+			var convertible = valueObj as IConvertible;
+			if (convertible != null) {
+				value = (convertible is string) ? convertible.GetHashCode() : convertible.ToDouble(null);
+			}
+			else {
+				throw new NMachineException("Failed to convert " + valueObj + " to double.");
+			}
+			return value;
 		}
 
 		private double[] GetLabelsVector(IEnumerable labels, int samplesCount)

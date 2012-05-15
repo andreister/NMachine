@@ -45,7 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Algorithms\AbstractAlgorithm.cs" />
-    <Compile Include="Algorithms\Extensions\EnumerableConverter.cs" />
     <Compile Include="Algorithms\Input.cs" />
     <Compile Include="Algorithms\InputPreprocessor.cs" />
     <Compile Include="Algorithms\InputSplitRatio.cs" />
